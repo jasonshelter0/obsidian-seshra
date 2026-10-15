@@ -1,0 +1,9 @@
+{
+  "id": "seshra",
+  "name": "Seshra",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Read and navigate Research Shorthand in Markdown notes.",
+  "author": "Seshra contributors",
+  "isDesktopOnly": false
+}
