@@ -645,7 +645,7 @@ Both must always describe the same underlying research state.
 
 ## Project Structure & Module Organization
 
-`src/parser.ts` recognizes RS Markdown; `src/index.ts` maintains the vault-wide index; `src/editor.ts` decorates Live Preview; `src/inspector.ts` renders the side panel; and `src/main.ts` wires the Obsidian events and commands. Parser and index tests live in `tests/`. Obsidian loads `manifest.json`, the built `main.js`, and `styles.css` from the plugin directory.
+`src/parser.ts` recognizes RS Markdown; `src/index.ts` maintains the vault-wide index; `src/visual-model.ts` prepares evidence and entity groups; `src/editor.ts` decorates Live Preview; `src/inspector.ts` renders the side panel; and `src/main.ts` wires Obsidian events and commands. Parser and index tests live in `tests/`. Obsidian loads `manifest.json`, the built `main.js`, and `styles.css` from the plugin directory.
 
 ## Build, Test, and Development Commands
 
@@ -661,4 +661,4 @@ Use Node's built-in test runner (`npm test`). Add focused tests for explicit syn
 
 ## Commit & Pull Request Guidelines
 
-This workspace has no readable local commit history. Use short, imperative commit subjects, such as `Add evidence navigation`. Pull requests to `jasonshelter0/obsidian-seshra` should explain the change, list verification performed, link a related issue when one exists, and include screenshots for visible UI changes. Keep credentials and personal vault data out of commits.
+Use short, imperative commit subjects, such as `Add evidence navigation`. Pull requests to `jasonshelter0/obsidian-seshra` should explain the change, list verification performed, link a related issue when one exists, and include screenshots for visible UI changes. Keep credentials and personal vault data out of commits.

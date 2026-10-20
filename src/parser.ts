@@ -99,6 +99,8 @@ export function parseRs(markdown: string, sourceFile = ''): RsDocument {
         const relation = relationPattern.exec(line);
         if (relation) {
           current.relations.push({ key: relation[1].toLowerCase(), values: splitValues(relation[2]), line: i });
+        } else if (/^\s*\|\s*@/.test(line)) {
+          // A provenance-only line belongs to the block, not its prose body.
         } else if (line.startsWith('::') && current.kind === 'entity') {
           current.text += (current.text ? '\n' : '') + line.slice(2).trim();
         } else {

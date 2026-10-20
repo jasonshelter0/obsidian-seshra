@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseRs } from '../src/parser.ts';
 import { RsIndex } from '../src/index.ts';
+import { buildEntityRelations, buildEvidenceGroups } from '../src/visual-model.ts';
 
 test('recognizes explicit RS blocks while leaving prose and fenced examples alone', () => {
   const markdown = [
@@ -24,6 +25,7 @@ test('recognizes explicit RS blocks while leaving prose and fenced examples alon
   assert.equal(document.blocks[0].text, 'Local contrast');
   assert.deepEqual(document.blocks[1].relations[0].values, ['E1', 'E2']);
   assert.deepEqual(document.blocks[1].sources, ['@self:synthesis']);
+  assert.doesNotMatch(document.blocks[1].text, /@self:synthesis/);
   assert.deepEqual(document.references.filter(ref => ref.kind === 'reasoning').map(ref => ref.key), ['E1', 'E2']);
   assert.equal(document.references.filter(ref => ref.key === 'sirst').length, 2);
 });
@@ -64,4 +66,23 @@ test('preserves reference offsets in CRLF notes and follows file renames', () =>
   index.rename('old.md', 'new.md');
   assert.equal(index.getEntity('ALCNet')[0].sourceFile, 'new.md');
   assert.equal(index.getMentions('SIRST')[0].sourceFile, 'new.md');
+});
+
+test('groups evidence with source text and flags missing definitions', () => {
+  const index = new RsIndex();
+  index.update('claim.md', 'C3+: Feature preservation helps.\n| sup:E1,E1,E4\n| opp:E9\n| lim:X3');
+  index.update('evidence.md', 'E1: Measured improvement');
+  const claim = index.getReasoning('C3')[0];
+  const groups = buildEvidenceGroups(index, claim);
+  assert.deepEqual(groups.map(group => [group.key, group.items.length]), [['sup', 2], ['opp', 1], ['lim', 1]]);
+  assert.equal(groups[0].items[0].block?.title, 'Measured improvement');
+  assert.equal(groups[0].items[1].block, undefined);
+});
+
+test('extracts entity relation chips without treating plain properties as links', () => {
+  const block = parseRs('[METHOD] ALCNet\n| task:[[SIRST]]\n| theme:[[Feature Preservation]],Other', 'methods.md').blocks[0];
+  assert.deepEqual(buildEntityRelations(block), [
+    { key: 'task', values: [{ name: 'SIRST', linked: true }] },
+    { key: 'theme', values: [{ name: 'Feature Preservation', linked: true }, { name: 'Other', linked: false }] },
+  ]);
 });

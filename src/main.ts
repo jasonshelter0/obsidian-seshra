@@ -14,7 +14,8 @@ export default class RsPlugin extends Plugin {
       target => void this.openInspector(target),
       id => void this.openReasoning(id),
     ));
-    this.addRibbonIcon('scan-eye', 'Open RS Inspector', () => void this.openInspectorAtCursor());
+    this.addRibbonIcon('scan-eye', 'Open RS overview', () => void this.openOverview());
+    this.addCommand({ id: 'open-note-overview', name: 'Open RS overview for current note', callback: () => void this.openOverview() });
     this.addCommand({ id: 'inspect-at-cursor', name: 'Inspect RS at cursor', editorCallback: () => void this.openInspectorAtCursor() });
     this.addCommand({ id: 'check-current-note', name: 'Check RS references in current note', editorCallback: () => this.showDiagnostics() });
     this.registerEvent(this.app.vault.on('create', file => { if (file instanceof TFile && file.extension === 'md') this.queueRefresh(file); }));
@@ -38,14 +39,31 @@ export default class RsPlugin extends Plugin {
   }
 
   async openInspector(target: RsTarget) {
+    const inspector = await this.getInspector();
+    inspector?.show(target);
+  }
+
+  private async openOverview() {
+    const file = this.app.workspace.getActiveFile();
+    if (!file || file.extension !== 'md') { new Notice('Open a Markdown note first.'); return; }
+    const view = this.app.workspace.getLeavesOfType('markdown')
+      .map(leaf => leaf.view)
+      .find(view => view instanceof MarkdownView && view.file?.path === file.path);
+    const markdown = view instanceof MarkdownView ? view.editor.getValue() : await this.app.vault.cachedRead(file);
+    this.index.update(file.path, markdown);
+    const inspector = await this.getInspector();
+    inspector?.showOverview(file.path);
+  }
+
+  private async getInspector(): Promise<RsInspector | null> {
     let leaf: WorkspaceLeaf | null = this.app.workspace.getLeavesOfType(INSPECTOR_VIEW)[0] ?? null;
     if (!leaf) {
       leaf = this.app.workspace.getRightLeaf(false);
-      if (!leaf) return;
+      if (!leaf) return null;
       await leaf.setViewState({ type: INSPECTOR_VIEW, active: true });
     }
     this.app.workspace.revealLeaf(leaf);
-    (leaf.view as RsInspector).show(target);
+    return leaf.view as RsInspector;
   }
 
   async openReasoning(id: string) {

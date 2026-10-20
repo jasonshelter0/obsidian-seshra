@@ -31,7 +31,8 @@ Use Node.js 22 or newer. Run `npm install`, then `npm run build`. Obsidian loads
    | @Paper23
    ```
 
-3. In Live Preview, Alt-click an entity heading or `[[entity]]` to inspect it. Alt-click `C1` or `E1` to inspect reasoning; Alt-click an evidence ID in a `sup:` relation to jump to its definition. Use the command **Inspect RS at cursor** as a keyboard alternative.
-4. Use **Check RS references in current note** for duplicate reasoning IDs and missing relation targets.
+3. Open **RS overview for current note** from the ribbon or command palette. It groups entities and reasoning in a compact side panel. Select an item to see its entity relations or its evidence map, then use **Back** to return to the overview.
+4. In Live Preview, colored left rails distinguish RS headings while the Markdown stays editable. Alt-click an entity heading or `[[entity]]` to inspect it. Alt-click `C1` or `E1` to inspect reasoning; Alt-click an evidence ID in a `sup:` relation to jump to its definition. Use **Inspect RS at cursor** as a keyboard alternative.
+5. Use **Check RS references in current note** for duplicate reasoning IDs and missing relation targets.
 
-The inspector reads Markdown and follows vault-wide definitions and mentions. It does not write hidden research data. Graph editing, AI, and visual write-back are future phases.
+The inspector groups supporting evidence, counter evidence, assumptions, limitations, tests, and results; missing references are shown as such. It reads Markdown and follows vault-wide definitions and mentions. It does not write hidden research data. Graph editing, AI, and visual write-back are future phases.

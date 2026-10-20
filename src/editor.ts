@@ -1,5 +1,5 @@
 import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view';
-import { RangeSetBuilder } from '@codemirror/state';
+import type { Range } from '@codemirror/state';
 import { parseRs, type RsDocument } from './parser';
 
 export type RsTarget = { kind: 'entity' | 'reasoning'; key: string };
@@ -50,49 +50,45 @@ export function createRsEditorExtension(open: (target: RsTarget) => void, jump: 
 }
 
 function makeDecorations(view: EditorView, document: RsDocument): DecorationSet {
-  const ranges: { from: number; to: number; className: string }[] = [];
+  const ranges: Range<Decoration>[] = [];
+  const mark = (from: number, to: number, className: string) => {
+    if (from < to) ranges.push(Decoration.mark({ class: className }).range(from, to));
+  };
   const min = view.viewport.from;
   const max = view.viewport.to;
   for (const block of document.blocks) {
     if (block.startOffset > max || block.endOffset < min) continue;
     const line = view.state.doc.line(block.startLine + 1);
+    ranges.push(Decoration.line({ attributes: { class: `rs-line rs-line-${block.kind} rs-line-${statusClass(block.status)}` } }).range(line.from));
     if (block.kind === 'entity') {
       const end = Math.min(line.to, line.from + block.type.length + 2);
-      ranges.push({ from: line.from, to: end, className: `rs-entity rs-entity-${block.type.toLowerCase()}` });
+      mark(line.from, end, `rs-entity rs-entity-${block.type.toLowerCase()}`);
     } else if (block.kind === 'reasoning') {
       const match = /^[PQHCEAXTRDN]\d+[+?~-]?:/.exec(line.text);
-      if (match) ranges.push({ from: line.from, to: line.from + match[0].length, className: `rs-reasoning rs-status-${statusClass(block.status)}` });
+      if (match) mark(line.from, line.from + match[0].length, `rs-reasoning rs-status-${statusClass(block.status)}`);
     } else {
-      ranges.push({ from: line.from, to: line.to, className: 'rs-explanation' });
+      mark(line.from, line.to, 'rs-explanation');
     }
     for (const relation of block.relations) {
       const propertyLine = view.state.doc.line(relation.line + 1);
       if (propertyLine.from <= max && propertyLine.to >= min && propertyLine.from < propertyLine.to) {
         const prefix = /^\s*\|\s*[\w-]+\s*:/.exec(propertyLine.text);
-        if (prefix) ranges.push({ from: propertyLine.from, to: propertyLine.from + prefix[0].length, className: 'rs-property' });
+        if (prefix) mark(propertyLine.from, propertyLine.from + prefix[0].length, 'rs-property');
       }
     }
     for (let lineNumber = block.startLine + 1; lineNumber <= block.endLine; lineNumber++) {
       const bodyLine = view.state.doc.line(lineNumber + 1);
       if (bodyLine.from > max || bodyLine.to < min) continue;
       for (const match of bodyLine.text.matchAll(/@(?:[\p{L}\p{N}][\p{L}\p{N}._-]*)(?::[\p{L}\p{N}._-]+)?/gu)) {
-        ranges.push({ from: bodyLine.from + match.index!, to: bodyLine.from + match.index! + match[0].length, className: 'rs-source' });
+        mark(bodyLine.from + match.index!, bodyLine.from + match.index! + match[0].length, 'rs-source');
       }
     }
   }
   for (const reference of document.references) {
     if (reference.from < min || reference.to > max) continue;
-    ranges.push({ from: reference.from, to: reference.to, className: reference.kind === 'reasoning' ? 'rs-reasoning-ref' : 'rs-entity-ref' });
+    mark(reference.from, reference.to, reference.kind === 'reasoning' ? 'rs-reasoning-ref' : 'rs-entity-ref');
   }
-  const builder = new RangeSetBuilder<Decoration>();
-  ranges.sort((a, b) => a.from - b.from || a.to - b.to);
-  let lastTo = -1;
-  for (const range of ranges) {
-    if (range.from < lastTo || range.from === range.to) continue;
-    builder.add(range.from, range.to, Decoration.mark({ class: range.className }));
-    lastTo = range.to;
-  }
-  return builder.finish();
+  return Decoration.set(ranges, true);
 }
 
 function statusClass(status?: string): string {
